@@ -44,7 +44,7 @@ pipeline {
                 script {
                     sh '''
                     [ -d "${PROJECT_DIR}" ] || { echo "Project directory not found! Exiting..."; exit 1; }
-                    mv -f package.json package-lock.json ${PROJECT_DIR}/
+                    mv -f package.json ${PROJECT_DIR}/
                     '''
                 }
             }
