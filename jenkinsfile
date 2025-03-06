@@ -10,6 +10,7 @@ pipeline {
         PROJECT_DIR = "package-project"
         DOCKER_IMAGE = "node-docker-app"
         DOCKER_CONTAINER = "a93c1046c4dd"
+        GIT_REPO = "https://github.com/udaykirannoti1999/package-project.git"
     }
 
     stages {
@@ -22,6 +23,18 @@ pipeline {
                     aws s3 cp s3://${S3_BUCKET}/$LATEST_FILE .
                     unzip -o $LATEST_FILE
                     '''
+                }
+            }
+        }
+
+        stage('Clone Repository if Missing') {
+            steps {
+                script {
+                    if (!fileExists("${PROJECT_DIR}")) {
+                        sh '''
+                        git clone ${GIT_REPO} ${PROJECT_DIR}
+                        '''
+                    }
                 }
             }
         }
