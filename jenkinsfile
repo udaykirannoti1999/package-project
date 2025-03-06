@@ -1,77 +1,37 @@
 pipeline {
     agent any
 
-    environment {
-        S3_BUCKET = "nodemode"
-        PACKAGE_ZIP = "package_json.zip"
-        PROJECT_DIR = "package-project"
-        DOCKER_IMAGE = "node-docker-app"
-        DOCKER_CONTAINER = "a93c1046c4dd"
+    tools {
+        git 'Git'  // Ensure this matches the name in Global Tool Configuration
     }
 
     stages {
-        stage('Fetch Latest Package from S3') {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
             steps {
                 script {
-                    sh '''
-                    LATEST_FILE=$(aws s3 ls s3://${S3_BUCKET}/ --recursive | sort | tail -n 1 | awk '{print $4}')
-                    aws s3 cp s3://${S3_BUCKET}/$LATEST_FILE .
-                    unzip -o $LATEST_FILE
-                    '''
+                    sh 'echo "Building the project..."'
                 }
             }
         }
 
-        stage('Update Repository Dependencies') {
+        stage('Test') {
             steps {
                 script {
-                    sh '''
-                    if [ -d "${PROJECT_DIR}" ]; then
-                        mv -f package.json package-lock.json ${PROJECT_DIR}/
-                        echo "Updated package.json in repository."
-                    else
-                        echo "Project directory not found! Exiting..."
-                        exit 1
-                    fi
-                    '''
+                    sh 'echo "Running tests..."'
                 }
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Deploy') {
             steps {
                 script {
-                    sh '''
-                    cd ${PROJECT_DIR}
-                    npm install
-                    '''
-                }
-            }
-        }
-
-        stage('Build and Deploy Docker Container') {
-            steps {
-                script {
-                    sh '''
-                    cd ${PROJECT_DIR}
-
-                    docker build -t ${DOCKER_IMAGE} .
-
-                    docker stop ${DOCKER_CONTAINER} || true
-
-                    docker rm ${DOCKER_CONTAINER} || true
-                    
-                    # Run the new container
-                    docker run -d --name ${DOCKER_CONTAINER} -p 3000:3000 ${DOCKER_IMAGE}
-                    '''
-                }
-            }
-        }
-
-        stage('Cleanup') {
-            steps {
-                script {
-                    sh "rm -f $PACKAGE_ZIP"
+                    sh 'echo "Deploying application..."'
                 }
             }
         }
