@@ -3,6 +3,7 @@ pipeline {
     tools {
         git 'mygit'
     }
+
     environment {
         S3_BUCKET = "nodemode"
         PACKAGE_ZIP = "package_json.zip"
@@ -17,6 +18,7 @@ pipeline {
                 script {
                     sh '''
                     LATEST_FILE=$(aws s3 ls s3://${S3_BUCKET}/ --recursive | sort | tail -n 1 | awk '{print $4}')
+                    [ -z "$LATEST_FILE" ] && { echo "No package found in S3. Exiting..."; exit 1; }
                     aws s3 cp s3://${S3_BUCKET}/$LATEST_FILE .
                     unzip -o $LATEST_FILE
                     '''
@@ -28,13 +30,8 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    if [ -d "${PROJECT_DIR}" ]; then
-                        mv -f package.json package-lock.json ${PROJECT_DIR}/
-                        echo "Updated package.json in repository."
-                    else
-                        echo "Project directory not found! Exiting..."
-                        exit 1
-                    fi
+                    [ -d "${PROJECT_DIR}" ] || { echo "Project directory not found! Exiting..."; exit 1; }
+                    mv -f package.json package-lock.json ${PROJECT_DIR}/
                     '''
                 }
             }
@@ -45,7 +42,7 @@ pipeline {
                 script {
                     sh '''
                     cd ${PROJECT_DIR}
-                    npm install
+                    npm install || { echo "npm install failed! Exiting..."; exit 1; }
                     '''
                 }
             }
@@ -56,15 +53,10 @@ pipeline {
                 script {
                     sh '''
                     cd ${PROJECT_DIR}
-
-                    docker build -t ${DOCKER_IMAGE} .
-
+                    docker build -t ${DOCKER_IMAGE} . || exit 1
                     docker stop ${DOCKER_CONTAINER} || true
-
                     docker rm ${DOCKER_CONTAINER} || true
-                    
-                    # Run the new container
-                    docker run -d --name ${DOCKER_CONTAINER} -p 3000:3000 ${DOCKER_IMAGE}
+                    docker run -d --name ${DOCKER_CONTAINER} -p 3000:3000 ${DOCKER_IMAGE} || exit 1
                     '''
                 }
             }
