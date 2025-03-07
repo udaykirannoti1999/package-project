@@ -31,9 +31,7 @@ pipeline {
             steps {
                 script {
                     if (!fileExists("${PROJECT_DIR}")) {
-                        sh '''
-                        git clone ${GIT_REPO} ${PROJECT_DIR}
-                        '''
+                        sh "git clone ${GIT_REPO} ${PROJECT_DIR}"
                     }
                 }
             }
@@ -71,6 +69,14 @@ pipeline {
                     docker rm ${DOCKER_CONTAINER} || true
                     docker run -d --name ${DOCKER_CONTAINER} -p 3000:3000 ${DOCKER_IMAGE} || exit 1
                     '''
+                }
+            }
+        }
+
+        stage('List Installed Node Modules') {
+            steps {
+                script {
+                    sh "docker exec ${DOCKER_CONTAINER} npm list --depth=0 || echo 'Failed to list modules!'"
                 }
             }
         }
