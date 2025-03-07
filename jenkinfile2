@@ -6,6 +6,7 @@ pipeline {
         PROJECT_NAME = "package-project"
         S3_BUCKET = "nodemode"
         PACKAGE_ZIP = "package_json.zip"
+        BRANCH_NAME = "dev"  // Change this to the desired branch
     }
     
     stages {
@@ -20,7 +21,7 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 script {
-                    sh "git clone ${REPO_URL}"
+                    sh "git clone --branch ${BRANCH_NAME} ${REPO_URL} ${PROJECT_NAME}"
                 }
             }
         }
