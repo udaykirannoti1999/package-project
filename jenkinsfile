@@ -9,7 +9,7 @@ pipeline {
         PACKAGE_ZIP = "package_json.zip"
         PROJECT_DIR = "package-project"
         DOCKER_IMAGE = "node-docker-app"
-        DOCKER_CONTAINER = "a93c1046c4dd"
+        DOCKER_CONTAINER = "8c64ea5a9225"
         GIT_REPO = "https://github.com/udaykirannoti1999/package-project.git"
     }
 
