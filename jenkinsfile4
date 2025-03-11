@@ -1,0 +1,61 @@
+pipeline {
+    agent any
+    
+    environment {
+        REPO_URL = "https://github.com/udaykirannoti1999/package-project.git"
+        PROJECT_NAME = "package-project"
+        S3_BUCKET = "nodemode"
+        PACKAGE_ZIP = "node_modules.zip"
+        BRANCH = "dev"
+    }
+    
+    stages {
+        stage('Cleanup Existing Repository') {
+            steps {
+                script {
+                    sh "rm -rf ${PROJECT_NAME}"
+                }
+            }
+        }
+        
+        stage('Clone Repository') {
+            steps {
+                script {
+                  sh "git clone -b ${BRANCH} ${REPO_URL} ${PROJECT_NAME}"
+                }
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    sh "cd ${PROJECT_NAME} && npm install"
+                }
+            }
+        }
+        
+        stage('Package node_modules') {
+            steps {
+                script {
+                    sh "cd ${PROJECT_NAME} && zip -r ../${PACKAGE_ZIP} node_modules"
+                }
+            }
+        }
+        
+        stage('Upload to S3') {
+            steps {
+                script {
+                    sh "aws s3 cp ${PACKAGE_ZIP} s3://${S3_BUCKET}/"
+                }
+            }
+        }
+        
+        stage('Final Cleanup') {
+            steps {
+                script {
+                    sh "rm -rf ${PROJECT_NAME} ${PACKAGE_ZIP}"
+                }
+            }
+        }
+    }
+}
