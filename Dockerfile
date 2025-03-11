@@ -1,18 +1,18 @@
-# Use the official Node.js image
+# Use a lightweight Node.js image
 FROM node:18
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy package.json and install dependencies
-COPY package.json ./
-RUN npm install
+# Copy package.json and package-lock.json
+COPY package*.json ./
 
-# Copy the rest of the application code
+# If node_modules exists, skip npm install
+COPY node_modules ./node_modules
+
+# Copy the rest of your application files
 COPY . .
 
-# Expose the application port
 EXPOSE 3000
 
-# Command to run the application
+# Run the application
 CMD ["npm", "start"]
