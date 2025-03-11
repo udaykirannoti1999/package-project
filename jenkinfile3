@@ -1,0 +1,71 @@
+pipeline {
+    agent any
+
+    environment {
+        S3_BUCKET = "nodemode"
+        PACKAGE_ZIP = "node_modules.zip"
+        IMAGE_NAME = "node-docker-app"
+        REPO_URL = "https://github.com/udaykirannoti1999/package-project.git"
+        BRANCH = "dev"
+        PROJECT_NAME = "package-project"
+    }
+
+    stages {
+        stage('Cleanup Existing Files') {
+            steps {
+                script {
+                    sh "rm -rf ${PROJECT_NAME} node_modules ${PACKAGE_ZIP}"
+                }
+            }
+        }
+
+        stage('Clone Repository') {
+            steps {
+                script {
+                    sh "git clone -b ${BRANCH} ${REPO_URL} ${PROJECT_NAME}"
+                }
+            }
+        }
+
+        stage('Download from S3') {
+            steps {
+                script {
+                    sh "aws s3 cp s3://${S3_BUCKET}/${PACKAGE_ZIP} ."
+                }
+            }
+        }
+
+        stage('Unzip node_modules') {
+            steps {
+                script {
+                    sh "unzip ${PACKAGE_ZIP}"
+                    sh "rm -rf ${PROJECT_NAME}/node_modules && mv node_modules ${PROJECT_NAME}/"
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${IMAGE_NAME} -f ${PROJECT_NAME}/Dockerfile ${PROJECT_NAME}"
+                }
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                script {
+                    sh "docker run -d -p 3000:3000 ${IMAGE_NAME}"
+                }
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                script {
+                    sh "rm -rf ${PROJECT_NAME} node_modules ${PACKAGE_ZIP}"
+                }
+            }
+        }
+    }
+}
