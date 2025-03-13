@@ -17,9 +17,11 @@ for service in $services; do
   (
     desiredCount=$(aws ecs describe-services --cluster "$cluster" --services "$service" --query "services[0].desiredCount" --output text)
 
-    if [ "$desiredCount" -eq 1 ]; then
-      echo "$service" >> "$output_file"
-      aws ecs update-service --cluster "$cluster" --service "$service" --desired-count 0 --no-cli-pager > /dev/null
+    if [ "$desiredCount" -eq 0 ]; then
+      if ! grep -q "$service" "$output_file"; then
+        echo "$service" >> "$output_file"
+      fi
+      aws ecs update-service --cluster "$cluster" --service "$service" --desired-count 1 --no-cli-pager > /dev/null
       aws ecs wait services-stable --cluster "$cluster" --services "$service"
       echo "Scaled down and stabilized service: $service"
     fi
