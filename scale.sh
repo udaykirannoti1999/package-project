@@ -25,6 +25,7 @@ for service in $services; do
         # Scale down the service
         aws ecs update-service --cluster "$cluster" --service "$service" --desired-count 1 --no-cli-pager > /dev/null
         aws ecs wait services-stable --cluster "$cluster" --services "$service"
+        aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"
 
         # Log updated service
         echo "$service" >> "$output_file"
@@ -40,8 +41,6 @@ for pid in "${pids[@]}"; do
   wait "$pid"
 done
 
-# Upload the updated services file to S3
-aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"
 
-echo "File uploaded to S3: $s3_bucket/$output_file"
-echo "Process completed. Services saved to $output_file."
+#echo "File uploaded to S3: $s3_bucket/$output_file"
+#echo "Process completed. Services saved to $output_file."
