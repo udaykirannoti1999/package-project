@@ -19,11 +19,11 @@ for service in $services; do
   (
     desiredCount=$(aws ecs describe-services --cluster "$cluster" --services "$service" --query "services[0].desiredCount" --output text)
 
-    if [ "$desiredCount" -eq 0 ]; then
+    if [ "$desiredCount" -eq 1 ]; then
       # Check if the service is already recorded in the file
       if ! grep -q "$service" "$output_file"; then
         # Scale down the service
-        aws ecs update-service --cluster "$cluster" --service "$service" --desired-count 1 --no-cli-pager > /dev/null
+        aws ecs update-service --cluster "$cluster" --service "$service" --desired-count 0 --no-cli-pager > /dev/null
         aws ecs wait services-stable --cluster "$cluster" --services "$service"
         aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"
 
