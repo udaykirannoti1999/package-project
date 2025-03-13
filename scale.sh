@@ -38,6 +38,10 @@ for pid in "${pids[@]}"; do
   wait "$pid"
 done
 
+# Remove duplicates and save to the final output file
+sort "$updated_file" | uniq > "$output_file"
+rm "$temp_file" "$updated_file"
+
 # Upload the file to S3 (only once)
 aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"
 
