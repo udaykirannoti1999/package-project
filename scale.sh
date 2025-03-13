@@ -5,7 +5,7 @@ s3_bucket="nodemode"
 current_date=$(date '+%Y-%m-%d')
 output_file="services_$current_date.txt"
 
-# Create an empty file to collect services
+# Create an empty file
 > "$output_file"
 
 echo "Listing all services with desired count 1..."
@@ -20,14 +20,16 @@ for service in $services; do
     desiredCount=$(aws ecs describe-services --cluster "$cluster" --services "$service" --query "services[0].desiredCount" --output text)
 
     if [ "$desiredCount" -eq 1 ]; then
-      # Add service to the file
-      echo "$service" >> "$output_file"
+      # Check if the service is already recorded in the file
+      if ! grep -q "$service" "$output_file"; then
+        # Scale down the service
+        aws ecs update-service --cluster "$cluster" --service "$service" --desired-count 0 --no-cli-pager > /dev/null
+        aws ecs wait services-stable --cluster "$cluster" --services "$service"
 
-      # Scale down the service
-      aws ecs update-service --cluster "$cluster" --service "$service" --desired-count 0 --no-cli-pager > /dev/null
-      aws ecs wait services-stable --cluster "$cluster" --services "$service"
-      
-      echo "Scaled down and stabilized service: $service"
+        # Log updated service
+        echo "$service" >> "$output_file"
+        echo "Scaled down and stabilized service: $service"
+      fi
     fi
   ) &
   pids+=("$!")
@@ -38,11 +40,7 @@ for pid in "${pids[@]}"; do
   wait "$pid"
 done
 
-# Remove duplicates and save to the final output file
-sort "$updated_file" | uniq > "$output_file"
-rm "$temp_file" "$updated_file"
-
-# Upload the file to S3 (only once)
+# Upload the updated services file to S3
 aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"
 
 echo "File uploaded to S3: $s3_bucket/$output_file"
