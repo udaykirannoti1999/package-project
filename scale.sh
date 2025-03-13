@@ -18,11 +18,15 @@ for service in $services; do
   (
     desiredCount=$(aws ecs describe-services --cluster "$cluster" --services "$service" --query "services[0].desiredCount" --output text)
 
-    if [ "$desiredCount" -eq 0 ]; then
-      echo "$service" >> "$output_file"
+    if [ "$desiredCount" -eq 1 ]; then
+     
+      #echo "$service" >> "$output_file"
 
-      aws ecs update-service --cluster "$cluster" --service "$service" --desired-count 1 --no-cli-pager > /dev/null
+      aws ecs update-service --cluster "$cluster" --service "$service" --desired-count 0 --no-cli-pager > /dev/null
       aws ecs wait services-stable --cluster "$cluster" --services "$service"
+      aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"
+      
+      #echo "File uploaded to S3: $s3_bucket/$output_file"
 
       echo "Scaled down and stabilized service: $service"
     fi
@@ -36,5 +40,4 @@ done
 
 echo "Process completed. Services saved to $output_file."
 
-aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"
-echo "File uploaded to S3: $s3_bucket/$output_file"
+
