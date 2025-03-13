@@ -20,17 +20,17 @@ if [ "$desiredCount" -eq 1 ]; then
   aws ecs update-service --cluster "$cluster" --service "$service" --desired-count 0 --no-cli-pager > /dev/null
   aws ecs wait services-stable --cluster "$cluster" --services "$service"
 
-  # Log updated service (Always append even if duplicate)
-  echo "$service" >> "$output_file"
-  echo "Scaled down and stabilized service: $service"
+  # Check if the service is already logged
+  if ! grep -qx "$service" "$output_file"; then
+    # Log updated service
+    echo "$service" >> "$output_file"
+    echo "Scaled down and stabilized service: $service"
 
-  # Check if the service is already uploaded to S3
-  if ! aws s3api head-object --bucket "$s3_bucket" --key "$output_file" 2>/dev/null || ! grep -q "$service" "$output_file"; then
     # Upload the updated services file to S3
     aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"
     echo "File uploaded to S3: $s3_bucket/$output_file"
   else
-    echo "Service $service is already uploaded to S3. Skipping upload."
+    echo "Service $service is already recorded in the file. Skipping upload."
   fi
 else
   echo "Service $service is not running with desired count 1."
