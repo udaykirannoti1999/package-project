@@ -17,12 +17,12 @@ for service in $services; do
   # Get the deseried count
   desiredCount=$(aws ecs describe-services --cluster "$cluster" --services "$service" --query "services[0].desiredCount" --output text)
 
-  if [ "$desiredCount" -eq 0 ]; then
+  if [ "$desiredCount" -eq 1 ]; then
     echo "$service" >> services.txt
   
     echo "Service $service has desired count 1."
   
-    aws ecs update-service --cluster "$cluster" --service "$service" --desired-count 1 --no-cli-pager > /dev/null
+    aws ecs update-service --cluster "$cluster" --service "$service" --desired-count 0 --no-cli-pager > /dev/null
  
     aws ecs wait services-stable --cluster "$cluster" --services "$service"
       
