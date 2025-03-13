@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cluster="my_dev_cluster37"
-s3_bucket="nodeman"
+s3_bucket="nodemode"
 current_date=$(date '+%Y-%m-%d')
 output_file="services_$current_date.txt"
 
