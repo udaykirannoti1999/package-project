@@ -5,6 +5,7 @@ s3_bucket="nodemode"
 current_date=$(date '+%Y-%m-%d')
 output_file="services_$current_date.txt"
 service_name="$1"  # Get the service name passed from Groovy
+slack_webhook_url=$(aws secretsmanager get-secret-value --secret-id 	myscreate234  --region ap-south-1 --query SecretString --output text | jq -r '.["slack-webhook"]')
 
 # Clear previous content of the output file
 > "$output_file"
@@ -44,5 +45,10 @@ fi
 # Upload the updated services file to S3
 aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"
 echo "File uploaded to S3: $s3_bucket/$output_file"
+
+ Send notification to Slack
+curl -X POST -H 'Content-type: application/json' \
+     --data "{\"text\":\"Service scaling completed for: \`$service_name\`. File: \`$output_file\` uploaded to S3.\"}" "$slack_webhook_url"
+
 
 echo "Process completed for service: $service_name. Saved to $output_file."
