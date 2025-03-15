@@ -46,7 +46,7 @@ fi
 aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"
 echo "File uploaded to S3: $s3_bucket/$output_file"
 
- Send notification to Slack
+ #Send notification to Slack
 curl -X POST -H 'Content-type: application/json' \
      --data "{\"text\":\"Service scaling completed for: \`$service_name\`. File: \`$output_file\` uploaded to S3.\"}" "$slack_webhook_url"
 
