@@ -3,7 +3,7 @@
 service_name=$1
 cluster="my_dev_cluster37"
 
-yesterday=$(date -d 'yesterday' +%Y-%m-%d)
+yesterday= $(date '+%Y-%m-%d')
 filePattern="services_${yesterday}.txt"
 s3_bucket="nodemode"
 
