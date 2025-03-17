@@ -1,0 +1,35 @@
+{
+    "blocks": [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*🚀 Service Scaling Update*"
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": "*Service Name:* {{service_name}}"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*Previous Desired Count:* {{previous_count}}"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*Updated Desired Count:* {{updated_count}}"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*Current Status:* {{status}}"
+                }
+            ]
+        }
+    ]
+}
