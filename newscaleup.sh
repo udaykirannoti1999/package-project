@@ -12,6 +12,8 @@ if [ -z "$service_name" ]; then
   exit 1
 fi
 
+aws s3 ls s3://nodemode/
+
 # Download the scaling file from S3
 aws s3 cp s3://$s3_bucket/$filePattern . > /dev/null 2>&1
 
