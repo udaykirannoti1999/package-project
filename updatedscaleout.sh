@@ -47,13 +47,46 @@ fi
 # Upload the updated services file to S3
 if aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"; then
   echo "File uploaded to S3: $s3_bucket/$output_file"
-  
+
   # Prepare the Slack alert JSON
-  alert_json=$(jq -n --arg service_name "$service_name" \
-                     --arg previous_count "$previous_count" \
-                     --arg updated_count "$updated_count" \
-                     --arg status "$status" \
-                     -f slack_alert.json)
+  alert_json=$(cat <<EOF
+  {
+      "blocks": [
+          {
+              "type": "section",
+              "text": {
+                  "type": "mrkdwn",
+                  "text": "*🚀 Service Scaling Update*"
+              }
+          },
+          {
+              "type": "divider"
+          },
+          {
+              "type": "section",
+              "fields": [
+                  {
+                      "type": "mrkdwn",
+                      "text": "*Service Name:* $service_name"
+                  },
+                  {
+                      "type": "mrkdwn",
+                      "text": "*Previous Desired Count:* $previous_count"
+                  },
+                  {
+                      "type": "mrkdwn",
+                      "text": "*Updated Desired Count:* $updated_count"
+                  },
+                  {
+                      "type": "mrkdwn",
+                      "text": "*Current Status:* $status"
+                  }
+              ]
+          }
+      ]
+  }
+EOF
+)
 
   # Send notification to Slack
   curl -X POST -H 'Content-type: application/json' \
