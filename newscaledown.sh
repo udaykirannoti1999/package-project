@@ -2,7 +2,7 @@
 
 cluster="my_dev_cluster37"
 s3_bucket="nodemode"
-current_date=$(date '+%Y-%m-%d')
+current_date=$(date -d "yesterday" '+%Y-%m-%d')
 output_file="services_$current_date.txt"
 service_name="$1"  # service name passed from Groovy
 slack_webhook_url=$(aws secretsmanager get-secret-value --secret-id myscreate234  --region ap-south-1 --query SecretString --output text | jq -r '.["slack-webhook"]')
