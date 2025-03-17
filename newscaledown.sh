@@ -33,7 +33,7 @@ if [ "$desiredCount" -eq 1 ]; then
   aws ecs update-service --cluster "$cluster" --service "$service_name" --desired-count 0 --no-cli-pager > /dev/null
   aws ecs wait services-stable --cluster "$cluster" --services "$service_name"
 
-  # checking whether duplicate services
+  # checking whether duplicate services uploading or not
   if ! grep -qx "$service_name" "$output_file"; then
     echo "$service_name" >> "$output_file"
     echo "Service $service_name scaled down to desired count 0."
