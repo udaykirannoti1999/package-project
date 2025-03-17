@@ -4,7 +4,7 @@ service_name=$1
 cluster="my_dev_cluster37"
 s3_bucket="nodemode"
 
-currentDate=$(date +%Y-%m-%d)
+currentDate=$(date -d "yesterday" '+%Y-%m-%d')
 filePattern="services_${currentDate}.txt"
 
 if [ -z "$service_name" ]; then
