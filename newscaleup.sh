@@ -34,6 +34,3 @@ if [ "$service_name" != "$filePattern" ]; then
         echo "Service $service_name is already running with desired count $desiredCount."
     fi
 fi
-
-# Cleanup the scaling file from S3 after processing
-aws s3 rm s3://$s3_bucket/$filePattern > /dev/null
