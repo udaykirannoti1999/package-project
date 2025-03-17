@@ -3,15 +3,13 @@
 cluster="my_dev_cluster37"
 s3_bucket="nodemode"
 current_date=$(date -d "yesterday" '+%Y-%m-%d')
-output_file="services_$current_date.csv"
+output_file="services_$current_date.txt"
 slack_file="slack_alert_$current_date.csv"
 service_name="$1"  # service name passed from Groovy
 slack_webhook_url=$(aws secretsmanager get-secret-value --secret-id myscreate234 --region ap-south-1 --query SecretString --output text | jq -r '.["slack-webhook"]')
 
-# Clear previous content of the output files and add headers
+# Clear previous content of the output files
 > "$output_file"
-echo "Service Name" >> "$output_file"
-
 > "$slack_file"
 echo "Service Name,Previous Desired Count,Updated Desired Count,Current Status" >> "$slack_file"
 
@@ -58,13 +56,20 @@ else
   echo "Failed to upload file to S3."
 fi
 
-# Send the Slack alert file
-if [ -s "$slack_file" ]; then
-  csv_content=$(cat "$slack_file")
-  curl -X POST -H 'Content-type: text/csv' --data "$csv_content" "$slack_webhook_url"
+# Upload the Slack alert file to S3
+if aws s3 cp "$slack_file" "s3://$s3_bucket/$slack_file"; then
+  slack_file_url="https://$s3_bucket.s3.amazonaws.com/$slack_file"
+  echo "Slack file uploaded successfully: $slack_file_url"
+fi
+
+# Send the Slack alert with the file link
+if [ -n "$slack_file_url" ]; then
+  message="Service Scaling Report uploaded. [Download Report]($slack_file_url)"
+  payload="{\"text\": \"$message\"}"
+  curl -X POST -H 'Content-type: application/json' --data "$payload" "$slack_webhook_url"
   echo "Slack alert sent successfully."
 else
-  echo "No services to send in the Slack alert."
+  echo "No file to send in the Slack alert."
 fi
 
 echo "Process completed for service: $service_name."
