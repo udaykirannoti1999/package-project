@@ -4,14 +4,14 @@ cluster="my_dev_cluster37"
 s3_bucket="nodemode"
 current_date=$(date -d "yesterday" '+%Y-%m-%d')
 output_file="services_$current_date.txt"
-slack_file="slack_alert_$current_date.csv"
-service_name="$1"  # service name passed from Groovy
-slack_webhook_url=$(aws secretsmanager get-secret-value --secret-id myscreate234 --region ap-south-1 --query SecretString --output text | jq -r '.["slack-webhook"]')
+slack_file="alert_json_$current_date.csv"
+service_name="$1"
+slack_webhook_url=$(aws secretsmanager get-secret-value --secret-id myscreate234 --region ap-south-1 --query SecretString --output text | jq -r '."slack-webhook"')
 
-# Clear previous content of the output files
+# Clear previous content of the files
 > "$output_file"
 > "$slack_file"
-echo "Service Name,Previous Desired Count,Updated Desired Count,Current Status" >> "$slack_file"
+echo "Service Name,Previous Desired Count,Updated Desired Count,Current Status" > "$slack_file"
 
 if [ -z "$service_name" ]; then
   echo "No service name provided. Exiting."
@@ -42,34 +42,31 @@ else
   status="ℹ️ Already Scaled Down"
 fi
 
-# Append service name only to the S3 upload file
+# Checking whether duplicate services are uploading or not
 if ! grep -qx "$service_name" "$output_file"; then
   echo "$service_name" >> "$output_file"
   echo "$service_name,$previous_count,$updated_count,$status" >> "$slack_file"
   echo "Service $service_name scaled down to desired count 0."
 fi
 
-# Upload the updated services list to S3
+# Upload the updated services file to S3
 if aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"; then
   echo "File uploaded to S3: $s3_bucket/$output_file"
+  
+  # Upload the Slack file to S3 and generate a presigned URL
+  if aws s3 cp "$slack_file" "s3://$s3_bucket/$slack_file"; then
+    presigned_url=$(aws s3 presign "s3://$s3_bucket/$slack_file")
+    echo "Presigned URL generated: $presigned_url"
+
+    # Send notification to Slack
+    message="Service Scaling Report generated. [Open Report]($presigned_url)"
+    payload="{\"text\": \"$message\"}"
+    curl -X POST -H 'Content-type: application/json' --data "$payload" "$slack_webhook_url"
+  else
+    echo "Failed to upload Slack file to S3."
+  fi
 else
   echo "Failed to upload file to S3."
 fi
 
-# Upload the Slack alert file to S3
-if aws s3 cp "$slack_file" "s3://$s3_bucket/$slack_file"; then
-  slack_file_url="https://$s3_bucket.s3.amazonaws.com/$slack_file"
-  echo "Slack file uploaded successfully: $slack_file_url"
-fi
-
-# Send the Slack alert with the file link
-if [ -n "$slack_file_url" ]; then
-  message="Service Scaling Report uploaded. [Download Report]($slack_file_url)"
-  payload="{\"text\": \"$message\"}"
-  curl -X POST -H 'Content-type: application/json' --data "$payload" "$slack_webhook_url"
-  echo "Slack alert sent successfully."
-else
-  echo "No file to send in the Slack alert."
-fi
-
-echo "Process completed for service: $service_name."
+echo "Process completed for service: $service_name. Saved to $output_file."
