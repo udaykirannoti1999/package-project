@@ -6,6 +6,7 @@ current_date=$(date -d "yesterday" '+%Y-%m-%d')
 output_file="services_$current_date.txt"
 slack_file="slack_alert_$current_date.csv"
 service_name="$1"
+slack_webhook_url=$(aws secretsmanager get-secret-value --secret-id myscreate234  --region ap-south-1 --query SecretString --output text | jq -r '.["slack-webhook"]')
 
 # Clear previous content of the files
 > "$output_file"
@@ -62,6 +63,6 @@ fi
 slack_file_url="file://$(pwd)/$slack_file"
 message="Service Scaling Report generated. [Open Report]($slack_file_url)"
 payload="{\"text\": \"$message\"}"
-curl -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
+curl -X POST -H 'Content-type: application/json' --data "$payload" "$slack_webhook_url"
 echo "Slack alert sent successfully."
 
