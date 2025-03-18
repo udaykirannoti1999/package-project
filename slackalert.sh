@@ -59,10 +59,8 @@ else
     echo "Failed to upload file to S3."
 fi
 
-# Send Slack alert with local file link
-slack_file_url="file://$(pwd)/$slack_file"
-message="Service Scaling Report generated. [Open Report]($slack_file_url)"
-payload="{\"text\": \"$message\"}"
+# Send Slack alert with CSV content
+slack_message="Service Scaling Report:\n\n$(cat "$slack_file")"
+payload="{\"text\": \"$slack_message\"}"
 curl -X POST -H 'Content-type: application/json' --data "$payload" "$slack_webhook_url"
 echo "Slack alert sent successfully."
-
