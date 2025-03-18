@@ -8,11 +8,6 @@ s3_bucket="nodemode"
 currentDate=$(date -d "yesterday" '+%Y-%m-%d')
 filePattern="services_${currentDate}.txt"
 
-if [ -z "$service_name" ]; then
-  echo "Error: No service name provided."
-  exit 1
-fi
-
 # Download the scaling file from S3
 aws s3 cp s3://$s3_bucket/$filePattern . > /dev/null 2>&1
 
@@ -21,8 +16,8 @@ if [ ! -f "$filePattern" ]; then
   exit 1
 fi
 
-# If the script is called without a service name, return the list of services
-if [ "$service_name" == "$filePattern" ]; then
+# If no service name is provided, list all services from the file
+if [ -z "$service_name" ]; then
     cat "$filePattern"
     exit 0
 fi
