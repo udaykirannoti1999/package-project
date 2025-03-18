@@ -4,10 +4,13 @@ cluster="my_dev_cluster37"
 s3_bucket="nodemode"
 current_date=$(date -d "yesterday" '+%Y-%m-%d')
 output_file="services_$current_date.txt"
+csv_file="alert_$current_date.csv"
 service_name="$1"  # service name passed from Groovy
 slack_webhook_url=$(aws secretsmanager get-secret-value --secret-id myscreate234 --region ap-south-1 --query SecretString --output text | jq -r '.["slack-webhook"]')
-# Clear previous content of the output file
+
+# Clear previous content of the output files
 > "$output_file"
+> "$csv_file"
 
 if [ -z "$service_name" ]; then
   echo "No service name provided. Exiting."
@@ -44,11 +47,18 @@ if ! grep -qx "$service_name" "$output_file"; then
   echo "Service $service_name scaled down to desired count 0."
 fi
 
-# Upload the updated services file to S3
-if aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"; then
-  echo "File uploaded to S3: $s3_bucket/$output_file"
+# Save the alert information as CSV
+if [ ! -f "$csv_file" ]; then
+  echo "Service Name,Previous Desired Count,Updated Desired Count,Current Status" > "$csv_file"
+fi
 
-  # Prepare the Slack alert JSON
+echo "$service_name,$previous_count,$updated_count,$status" >> "$csv_file"
+
+# Upload the updated services file and CSV file to S3
+if aws s3 cp "$output_file" "s3://$s3_bucket/$output_file" && aws s3 cp "$csv_file" "s3://$s3_bucket/$csv_file"; then
+  echo "Files uploaded to S3: $s3_bucket/$output_file and $s3_bucket/$csv_file"
+
+  # Prepare the Slack alert JSON with S3 link
   alert_json=$(cat <<EOF
   {
       "blocks": [
@@ -80,6 +90,10 @@ if aws s3 cp "$output_file" "s3://$s3_bucket/$output_file"; then
                   {
                       "type": "mrkdwn",
                       "text": "*Current Status:* $status"
+                  },
+                  {
+                      "type": "mrkdwn",
+                      "text": "*CSV Report:* https://$s3_bucket.s3.amazonaws.com/$csv_file"
                   }
               ]
           }
@@ -92,7 +106,7 @@ EOF
   curl -X POST -H 'Content-type: application/json' \
        --data "$alert_json" "$slack_webhook_url"
 else
-  echo "Failed to upload file to S3."
+  echo "Failed to upload files to S3."
 fi
 
-echo "Process completed for service: $service_name. Saved to $output_file."
+echo "Process completed for service: $service_name. Saved to $output_file and $csv_file."
