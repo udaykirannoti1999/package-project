@@ -3,8 +3,8 @@
 service_name=$1
 cluster="my_dev_cluster37"
 s3_bucket="nodemode"
-
-
+currentDate=$(date -d "yesterday" '+%Y-%m-%d')
+filePattern="services_${currentDate}.txt"
 
 # Download the scaling file from S3
 aws s3 cp s3://$s3_bucket/$filePattern . > /dev/null 2>&1
