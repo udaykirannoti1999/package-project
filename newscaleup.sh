@@ -38,3 +38,5 @@ if [ "$desiredCount" -eq 0 ]; then
 else
     echo "Service $service_name is already running with desired count $desiredCount."
 fi
+
+aws s3 rm s3://$s3_bucket/$filePattern
